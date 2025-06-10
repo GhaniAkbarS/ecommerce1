@@ -1,9 +1,8 @@
-﻿using ecommerce1.Models;
-using ecommerce1.Services;
-
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
+using ecommerce1.Models;
+using ecommerce1.Services;
 
 namespace ecommerce1.Services
 {
@@ -32,13 +31,17 @@ namespace ecommerce1.Services
                     };
                 }
 
+                // Ambil data user (simulasi - ganti dengan database query)
+                var userData = await GetUserDataAsync(model.Email);
+
                 // Buat claims untuk user
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, model.Email),
-                    new Claim(ClaimTypes.Email, model.Email),
-                    new Claim("UserId", "123"), // Ganti dengan ID user dari database
-                    new Claim(ClaimTypes.Role, "User") // Sesuaikan dengan role user
+                    new Claim(ClaimTypes.Name, userData.Name),
+                    new Claim(ClaimTypes.Email, userData.Email),
+                    new Claim("UserId", userData.Id.ToString()),
+                    new Claim(ClaimTypes.Role, userData.Role),
+                    new Claim("LoginTime", DateTime.UtcNow.ToString())
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -47,7 +50,8 @@ namespace ecommerce1.Services
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = model.RememberMe,
-                    ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
+                    ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8),
+                    AllowRefresh = true
                 };
 
                 await _httpContextAccessor.HttpContext.SignInAsync(
@@ -55,24 +59,47 @@ namespace ecommerce1.Services
                     claimsPrincipal,
                     authProperties);
 
-                _logger.LogInformation($"User {model.Email} berhasil login");
+                _logger.LogInformation($"User {model.Email} berhasil login pada {DateTime.Now}");
 
                 return new LoginResult
                 {
                     Success = true,
                     Message = "Login berhasil",
-                    ReturnUrl = model.ReturnUrl ?? "/"
+                    ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/" : model.ReturnUrl
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saat proses login");
+                _logger.LogError(ex, "Error saat proses login untuk user: {Email}", model.Email);
                 return new LoginResult
                 {
                     Success = false,
                     Message = "Terjadi kesalahan sistem"
                 };
             }
+        }
+
+        private async Task<UserData> GetUserDataAsync(string email)
+        {
+            // TODO: Ganti dengan query database sebenarnya
+            await Task.Delay(50); // Simulasi database call
+
+            // Simulasi data user
+            return new UserData
+            {
+                Id = 1,
+                Name = "Admin User",
+                Email = email,
+                Role = "Admin"
+            };
+        }
+
+        private class UserData
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Email { get; set; }
+            public string Role { get; set; }
         }
 
         public async Task LogoutAsync()

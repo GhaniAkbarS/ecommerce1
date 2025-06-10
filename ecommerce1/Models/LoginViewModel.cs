@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿// Models/LoginViewModel.cs
+using System.ComponentModel.DataAnnotations;
 
-namespace ecommerce1.Models
+namespace ecommerce_net.Models
 {
     public class LoginViewModel
     {
@@ -9,17 +10,8 @@ namespace ecommerce1.Models
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Password harus diisi")]
-        [DataType(DataType.Password)]
         public string Password { get; set; }
 
         public bool RememberMe { get; set; }
-        public string ReturnUrl { get; set; }
-    }
-
-    public class LoginResult
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; }
-        public string ReturnUrl { get; set; }
     }
 }
